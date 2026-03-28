@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -16,6 +17,7 @@
   border-top: none;
   border-left: none;
   border-right: none;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
 }
 
 .logo {
@@ -127,6 +129,10 @@
   margin: 0 auto;
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
 /* Print specific adjustments */
 @media print {
   .app-container {
@@ -159,6 +165,15 @@
   .mobile-toggle {
     display: block;
   }
+
+  .app-header {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .header-actions {
+    gap: 10px;
+  }
   
   .app-sidebar {
     position: absolute;
@@ -168,10 +183,21 @@
     z-index: 50;
     transition: left 0.3s ease;
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    width: min(92vw, 450px);
+    min-width: min(92vw, 450px);
   }
   
   .app-sidebar.mobile-open {
     left: 0;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(3, 7, 18, 0.55);
+    backdrop-filter: blur(2px);
   }
   
   .app-preview {
@@ -243,6 +269,23 @@
 }
 
 @media (max-width: 640px) {
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .logo h1 {
+    font-size: 1rem;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .btn-primary {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
   .modal-overlay {
     align-items: flex-start;
     padding: 12px;
@@ -252,5 +295,13 @@
     width: 100%;
     max-height: calc(100vh - 24px);
     padding: 18px;
+  }
+
+  .app-preview {
+    padding: 12px;
+  }
+
+  .preview-container {
+    max-width: 100%;
   }
 }

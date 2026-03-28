@@ -250,9 +250,17 @@ function App() {
             <Editor resumeData={resumeData} setResumeData={setResumeData} aiConfig={{ provider: aiProvider, geminiKey, ollamaApiKey, ollamaConnectionMode, ollamaBaseUrl, ollamaTextModel, ollamaVisionModel, ollamaCustomTextModel, ollamaCustomVisionModel }} setIsSettingsOpen={setIsSettingsOpen} />
           </div>
         </aside>
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            className="sidebar-backdrop no-print"
+            aria-label="Close sidebar"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
         {/* Preview Area - Takes full width on print */}
-        <section className="app-preview">
+        <section className="app-preview" onClick={() => mobileMenuOpen && setMobileMenuOpen(false)}>
           <div className="preview-container" ref={resumeExportRef}>
             <Preview data={resumeData} theme={selectedTheme} />
           </div>
