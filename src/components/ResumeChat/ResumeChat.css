@@ -1,0 +1,132 @@
+.resume-chat {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.resume-chat__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.resume-chat__header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.resume-chat__header p {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.resume-chat__revert {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  flex-shrink: 0;
+}
+
+.resume-chat__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.resume-chat__bubble {
+  max-width: 92%;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resume-chat__bubble--assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.resume-chat__bubble--user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.18) 0%, rgba(0, 242, 254, 0.16) 100%);
+  border: 1px solid rgba(79, 172, 254, 0.25);
+}
+
+.resume-chat__bubble--error {
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+.resume-chat__prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resume-chat__prompt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.resume-chat__prompt-chip:hover {
+  color: var(--text-primary);
+  border-color: rgba(79, 172, 254, 0.3);
+}
+
+.resume-chat__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resume-chat__composer label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.resume-chat__composer textarea {
+  min-height: 110px;
+}
+
+.resume-chat__send {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .resume-chat__header {
+    flex-direction: column;
+  }
+
+  .resume-chat__bubble {
+    max-width: 100%;
+  }
+}

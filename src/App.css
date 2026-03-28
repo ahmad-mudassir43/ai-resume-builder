@@ -1,0 +1,256 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  z-index: 100;
+  position: relative;
+  border-radius: 0;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  background: var(--accent-gradient);
+  color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: var(--shadow-glow);
+}
+
+.logo h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.logo span {
+  color: var(--accent-color);
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+}
+
+.mobile-toggle {
+  display: none;
+  color: var(--text-primary);
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-sidebar {
+  width: 450px;
+  min-width: 450px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+}
+
+.sidebar-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.app-preview {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.preview-container {
+  width: 100%;
+  max-width: 850px; /* A4 aspect roughly */
+  margin: 0 auto;
+}
+
+/* Print specific adjustments */
+@media print {
+  .app-container {
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+  
+  .app-main {
+    overflow: visible;
+    display: block;
+  }
+  
+  .app-preview {
+    background: transparent;
+    padding: 0;
+    overflow: visible;
+    display: block;
+  }
+  
+  .preview-container {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+  .mobile-toggle {
+    display: block;
+  }
+  
+  .app-sidebar {
+    position: absolute;
+    left: -100%;
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    transition: left 0.3s ease;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+  
+  .app-sidebar.mobile-open {
+    left: 0;
+  }
+  
+  .app-preview {
+    padding: 20px;
+  }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  max-height: min(90vh, 720px);
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  padding-bottom: 12px;
+  z-index: 1;
+}
+
+.modal-header h2 {
+  font-size: 1.2rem;
+}
+
+.modal-helper-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+
+.modal-body {
+  overflow: visible;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    padding: 18px;
+  }
+}
