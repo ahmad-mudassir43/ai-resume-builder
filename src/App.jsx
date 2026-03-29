@@ -17,6 +17,26 @@ import {
   ollamaVisionModelPresets,
 } from './utils/ollamaModels'
 
+const sanitizePdfFileName = (name) => {
+  const trimmedName = name?.trim() || 'resume'
+  const safeName = trimmedName.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_')
+  return safeName.endsWith('.pdf') ? safeName : `${safeName}.pdf`
+}
+
+const blobToBase64 = async (blob) => {
+  const arrayBuffer = await blob.arrayBuffer()
+  let binary = ''
+  const bytes = new Uint8Array(arrayBuffer)
+  const chunkSize = 0x8000
+
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+
+  return btoa(binary)
+}
+
 function App() {
   const [resumeData, setResumeData] = useState(createEmptyResumeData)
 
@@ -95,7 +115,11 @@ function App() {
     setIsExportingPdf(true)
 
     try {
-      const { default: html2pdf } = await import('html2pdf.js')
+      const fileName = sanitizePdfFileName(resumeData.personalInfo.name)
+      const [{ default: html2pdf }, { Capacitor }] = await Promise.all([
+        import('html2pdf.js'),
+        import('@capacitor/core'),
+      ])
       const exportClone = resumeNode.cloneNode(true)
       exportClone.style.width = '210mm'
       exportClone.style.minHeight = '297mm'
@@ -112,10 +136,10 @@ function App() {
       exportShell.appendChild(exportClone)
       document.body.appendChild(exportShell)
 
-      await html2pdf()
+      const pdfWorker = html2pdf()
         .set({
           margin: 0,
-          filename: `${resumeData.personalInfo.name?.trim() || 'resume'}.pdf`,
+          filename: fileName,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {
             scale: 2,
@@ -132,9 +156,30 @@ function App() {
           },
         })
         .from(exportClone)
-        .save()
 
-      document.body.removeChild(exportShell)
+      if (Capacitor.isNativePlatform()) {
+        const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+          import('@capacitor/filesystem'),
+          import('@capacitor/share'),
+        ])
+        const pdfBlob = await pdfWorker.outputPdf('blob')
+        const pdfBase64 = await blobToBase64(pdfBlob)
+        const { uri } = await Filesystem.writeFile({
+          path: fileName,
+          data: pdfBase64,
+          directory: Directory.Cache,
+          recursive: true,
+        })
+
+        await Share.share({
+          title: fileName,
+          text: 'Exported resume PDF',
+          url: uri,
+          dialogTitle: 'Export PDF',
+        })
+      } else {
+        await pdfWorker.save()
+      }
     } catch (err) {
       alert(`Error exporting PDF: ${err.message}`)
     } finally {
