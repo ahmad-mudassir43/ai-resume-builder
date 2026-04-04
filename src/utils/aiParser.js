@@ -565,31 +565,97 @@ export const cleanResumeFormattingWithAI = async (currentResumeData, aiConfig) =
   }
 }
 
-export const chatWithResumeAI = async (currentResumeData, instruction, aiConfig, jobDescription = '') => {
+export const getGuidedResumeQuestion = (resumeData) => {
+  const { personalInfo, experience, education, skills, projects } = resumeData;
+
+  if (!personalInfo?.name || !personalInfo?.email) {
+    return {
+      step: 'personalInfo',
+      question: "Let's start with the basics! What's your full name and a good email address for your resume?",
+      field: 'personalInfo'
+    };
+  }
+
+  if (!personalInfo?.summary || personalInfo.summary.length < 50) {
+    return {
+      step: 'summary',
+      question: "Great. Now, could you give me a brief summary of your professional background or what you're looking for in your next role?",
+      field: 'personalInfo.summary'
+    };
+  }
+
+  if (!experience || experience.length === 0) {
+    return {
+      step: 'experience',
+      question: "Got it. Let's add your work history. What was your most recent job role and which company was it at?",
+      field: 'experience'
+    };
+  }
+
+  if (!skills || skills.trim().length === 0) {
+    return {
+      step: 'skills',
+      question: "Perfect. What are some of your top technical or soft skills? (e.g., React, Python, Project Management)",
+      field: 'skills'
+    };
+  }
+
+  if (!education || education.length === 0) {
+    return {
+      step: 'education',
+      question: "Almost there! Could you tell me about your educational background (Degree, Institution, and Graduation Year)?",
+      field: 'education'
+    };
+  }
+
+  if (!projects || projects.length === 0) {
+    return {
+      step: 'projects',
+      question: "Lastly, do you have any notable projects you'd like to showcase? Just a quick name and what it was about.",
+      field: 'projects'
+    };
+  }
+
+  return {
+    step: 'complete',
+    question: "Your resume is looking solid! Is there anything specific you'd like to polish or add now?",
+    field: null
+  };
+};
+
+export const chatWithResumeAI = async (currentResumeData, instruction, aiConfig, jobDescription = '', isGuided = false) => {
   const currentDate = new Date().toISOString().slice(0, 10)
   const promptText = `
     You are an expert AI Resume Editor.
-    I am providing you with the user's current resume data in JSON format, a specific Natural Language instruction from the user on what they want to change, and an optional target Job Description for extra context.
+    I am providing you with the user's current resume data in JSON format, a specific Natural Language instruction/answer from the user, and an optional target Job Description for extra context.
     
-    USER INSTRUCTION: "${instruction}"
+    USER INSTRUCTION/ANSWER: "${instruction}"
     TARGET JOB DESCRIPTION CONTEXT: "${jobDescription || 'None provided'}"
     TODAY'S DATE: "${currentDate}"
+    MODE: ${isGuided ? 'GUIDED_BUILDER' : 'STANDARD_CHAT'}
     
     CRITICAL RULES:
-    1. Apply the user's specific instruction to the resume data.
+    1. Apply the user's input to the resume data.
     2. DO NOT change ANY other fields that the user did not explicitly or implicitly ask to change.
     3. NEVER invent employers, projects, degrees, dates, awards, or metrics that are not already supported by the resume data or the user's explicit instruction.
     4. If the user asks for stronger phrasing, improve wording while staying truthful.
-    5. If the user says they now have a larger total amount of experience, or implies they are still in their most recent role, update the most recent relevant experience entry so its endDate becomes "Present" unless the user explicitly gives a different end date.
-    6. If the user says they worked on a new responsibility, tool, feature, or achievement, add that information to the most relevant existing experience description by default unless they explicitly ask to create a new project or a new job entry.
-    7. When adding new work details to an experience description, append them as concise bullet-style lines and preserve existing content.
-    8. Prefer updating the latest experience entry when the user gives a general career update without naming a company.
-    5. Return ONLY a JSON object with exactly these keys:
-       {
-         "updatedResume": { ...full updated resume JSON... },
-         "assistantMessage": "Short explanation of what changed."
-       }
-    9. Return ONLY raw JSON, with no markdown, backticks (\`\`\`), or extra text surrounding it.
+    5. If in GUIDED_BUILDER mode, you MUST analyze the user's answer and update the relevant resume fields.
+    6. ENHANCEMENT SUGGESTION: If the user provides descriptive content (like a summary, experience description, or project details), you should also provide an "Enhanced Version" that is more professional, metric-driven, and ATS-friendly.
+    
+    RESPONSE FORMAT:
+    You must return a JSON object with exactly these keys:
+    {
+       "updatedResume": { ...full updated resume JSON... },
+       "assistantMessage": "Short explanation of what changed.",
+       "hasSuggestion": boolean (true if you are providing an enhanced version of the specific field updated),
+       "suggestion": {
+         "field": "dotted.path.to.field",
+         "original": "the exact text the user provided or the text before enhancement",
+         "enhanced": "your professionally rewritten version"
+       } (only if hasSuggestion is true)
+    }
+    
+    Return ONLY raw JSON, with no markdown, backticks (\`\`\`), or extra text surrounding it.
     
     === CURRENT RESUME JSON ===
     ${JSON.stringify(currentResumeData, null, 2)}
@@ -603,14 +669,11 @@ export const chatWithResumeAI = async (currentResumeData, instruction, aiConfig,
 
   try {
     const parsedResponse = parseJsonResponse(textResponse);
-
-    if (parsedResponse.updatedResume) {
-      return parsedResponse;
-    }
-
     return {
-      updatedResume: parsedResponse,
-      assistantMessage: 'I updated the resume based on your instruction.',
+      updatedResume: parsedResponse.updatedResume || parsedResponse,
+      assistantMessage: parsedResponse.assistantMessage || 'I updated the resume based on your instruction.',
+      hasSuggestion: !!parsedResponse.hasSuggestion,
+      suggestion: parsedResponse.suggestion || null
     };
   } catch (err) {
     console.error("Raw response:", textResponse);

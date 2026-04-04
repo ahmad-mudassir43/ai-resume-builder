@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bot, Loader2, MessageSquarePlus, RotateCcw, Send, Sparkles } from 'lucide-react'
-import { chatWithResumeAI } from '../../utils/aiParser'
+import { chatWithResumeAI, getGuidedResumeQuestion } from '../../utils/aiParser'
 import { normalizeResumeData } from '../../utils/resumeData'
 import './ResumeChat.css'
 
@@ -22,6 +22,7 @@ function ResumeChat({
 }) {
   const [instruction, setInstruction] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isGuidedMode, setIsGuidedMode] = useState(false)
   const [messages, setMessages] = useState([
     {
       id: 'assistant-intro',
@@ -29,6 +30,57 @@ function ResumeChat({
       text: 'Tell me what to change in your resume and I will update the fields directly.',
     },
   ])
+
+  const toggleGuidedMode = () => {
+    if (!isGuidedMode) {
+      setIsGuidedMode(true)
+      const firstQuestion = getGuidedResumeQuestion(resumeData)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-guided-${Date.now()}`,
+          role: 'assistant',
+          text: `Welcome to the Guided Resume Builder! I'll help you fill out your resume step-by-step. ${firstQuestion.question}`,
+          isGuided: true
+        }
+      ])
+    } else {
+      setIsGuidedMode(false)
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-guided-exit-${Date.now()}`,
+          role: 'assistant',
+          text: "Switching back to standard chat mode. You can still ask me to make any changes!",
+        }
+      ])
+    }
+  }
+
+  const handleApplySuggestion = (suggestion, messageId) => {
+    // Re-normalize data after manual update
+    const updatedResume = { ...resumeData }
+    // Note: Simple path traversal for dot notation
+    const keys = suggestion.field.split('.')
+    let current = updatedResume
+    for (let i = 0; i < keys.length - 1; i++) {
+      current = current[keys[i]]
+    }
+    current[keys[keys.length - 1]] = suggestion.enhanced
+    
+    setResumeData(normalizeResumeData(updatedResume))
+    
+    // Update message to show it was accepted
+    setMessages((prev) => prev.map(m => 
+      m.id === messageId ? { ...m, suggestionAccepted: true } : m
+    ))
+  }
+
+  const handleRejectSuggestion = (messageId) => {
+    setMessages((prev) => prev.map(m => 
+      m.id === messageId ? { ...m, suggestionRejected: true } : m
+    ))
+  }
 
   const handleSend = async (messageText = instruction) => {
     const trimmedInstruction = messageText.trim()
@@ -56,19 +108,26 @@ function ResumeChat({
       },
     ])
     setInstruction('')
-    onSaveAiSnapshot()
+    if (!isGuidedMode) onSaveAiSnapshot()
     setIsSending(true)
 
     try {
-      const result = await chatWithResumeAI(resumeData, trimmedInstruction, aiConfig, jobDescription)
+      const result = await chatWithResumeAI(resumeData, trimmedInstruction, aiConfig, jobDescription, isGuidedMode)
 
       setResumeData(normalizeResumeData(result.updatedResume))
+      
+      const nextQuestion = isGuidedMode ? getGuidedResumeQuestion(result.updatedResume) : null
+      const responseText = isGuidedMode 
+        ? `${result.assistantMessage} ${nextQuestion.question}`
+        : result.assistantMessage
+
       setMessages((prev) => [
         ...prev,
         {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          text: result.assistantMessage || 'I updated the resume based on your request.',
+          text: responseText,
+          suggestion: result.hasSuggestion ? result.suggestion : null
         },
       ])
     } catch (err) {
@@ -105,20 +164,66 @@ function ResumeChat({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`resume-chat__bubble resume-chat__bubble--${message.role}${message.isError ? ' resume-chat__bubble--error' : ''}`}
+            className={`resume-chat__bubble resume-chat__bubble--${message.role}${message.isError ? ' resume-chat__bubble--error' : ''}${message.isGuided ? ' resume-chat__bubble--guided' : ''}`}
           >
-            {message.text}
+            <div className="resume-chat__bubble-text">{message.text}</div>
+            
+            {message.suggestion && !message.suggestionAccepted && !message.suggestionRejected && (
+              <div className="resume-chat__suggestion">
+                <div className="resume-chat__suggestion-header">
+                  <Sparkles size={12} /> AI Enhancement Suggested
+                </div>
+                <div className="resume-chat__suggestion-comparison">
+                  <div className="resume-chat__suggestion-item resume-chat__suggestion-item--original">
+                    <label>Original</label>
+                    <p>{message.suggestion.original}</p>
+                  </div>
+                  <div className="resume-chat__suggestion-item resume-chat__suggestion-item--enhanced">
+                    <label>AI Enhanced</label>
+                    <p>{message.suggestion.enhanced}</p>
+                  </div>
+                </div>
+                <div className="resume-chat__suggestion-actions">
+                  <button 
+                    className="btn-suggestion btn-suggestion--accept"
+                    onClick={() => handleApplySuggestion(message.suggestion, message.id)}
+                  >
+                    Use Enhanced
+                  </button>
+                  <button 
+                    className="btn-suggestion btn-suggestion--reject"
+                    onClick={() => handleRejectSuggestion(message.id)}
+                  >
+                    Keep Mine
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {message.suggestionAccepted && (
+              <div className="resume-chat__suggestion-status resume-chat__suggestion-status--accepted">
+                 Updated with AI enhanced version!
+              </div>
+            )}
           </div>
         ))}
         {isSending && (
           <div className="resume-chat__bubble resume-chat__bubble--assistant">
-            <Loader2 size={15} className="spin" /> Updating your resume...
+            <Loader2 size={15} className="spin" /> Thinking...
           </div>
         )}
       </div>
 
       <div className="resume-chat__prompts">
-        {starterPrompts.map((prompt) => (
+        <button
+          type="button"
+          className={`resume-chat__prompt-chip resume-chat__prompt-chip--builder ${isGuidedMode ? 'active' : ''}`}
+          onClick={toggleGuidedMode}
+          disabled={isSending}
+        >
+          {isGuidedMode ? <><RotateCcw size={13} /> Exit Guided Mode</> : <><Sparkles size={13} /> Start Guided Builder</>}
+        </button>
+        {!isGuidedMode && starterPrompts.map((prompt) => (
           <button
             key={prompt}
             type="button"
