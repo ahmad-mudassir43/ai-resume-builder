@@ -121,11 +121,16 @@ function App() {
         import('@capacitor/core'),
       ])
       const exportClone = resumeNode.cloneNode(true)
-      exportClone.style.width = '210mm'
-      exportClone.style.minHeight = '297mm'
+      exportClone.style.width = '190mm' // Adjust width to fit within 10mm margins (210 - 20)
+      exportClone.style.minHeight = '277mm' // Adjust height to fit (297 - 20)
       exportClone.style.margin = '0'
       exportClone.style.borderRadius = '0'
       exportClone.style.boxShadow = 'none'
+      exportClone.style.paddingTop = '0' // Clear top padding to avoid double margin on first page (PDF already has 15mm)
+      exportClone.style.paddingBottom = '30px'
+      exportClone.style.paddingLeft = '30px'
+      exportClone.style.paddingRight = '30px'
+      exportClone.style.boxSizing = 'border-box'
 
       exportShell = document.createElement('div')
       exportShell.style.position = 'fixed'
@@ -138,7 +143,7 @@ function App() {
 
       const pdfWorker = html2pdf()
         .set({
-          margin: 0,
+          margin: [15, 10, 10, 10], // top, left, bottom, right in mm
           filename: fileName,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {

@@ -466,11 +466,109 @@ export const parseResumeFromImage = async (base64Image, mimeType, aiConfig) => {
 
   try {
     const parsedObj = parseJsonResponse(textResponse);
+    
+    // Basic validation to ensure we didn't get an empty JSON shell
+    const hasData = (
+      (parsedObj.personalInfo && (parsedObj.personalInfo.name || parsedObj.personalInfo.email || parsedObj.personalInfo.summary)) ||
+      (parsedObj.experience && parsedObj.experience.length > 0) ||
+      (parsedObj.education && parsedObj.education.length > 0) ||
+      (parsedObj.skills && parsedObj.skills.length > 5)
+    );
+
+    if (!hasData) {
+      throw new Error('AI could not find any recognizable resume information in this image.');
+    }
+
     return parsedObj;
   } catch (err) {
     console.error("Raw response:", textResponse);
     throw new Error('Failed to parse AI response into valid JSON: ' + err.message);
   }
+};
+
+export const parseResumeFromText = async (resumeText, aiConfig) => {
+  const promptText = `
+    You are an expert AI resume parsing assistant.
+    I am providing you with the text content extracted from a resume. 
+    Completely fill out the following JSON structure accurately based on this text.
+    Extract whatever information you can find. If a field is missing on the resume, leave it blank or return an empty array for lists.
+    CRITICAL RULE: NEVER inject filler text or dummy data. Only extract exactly what is supported by the provided text.
+    Return ONLY raw JSON, with no markdown, backticks (\`\`\`), or extra text surrounding it.
+    
+    Data Structure required:
+    {
+      "personalInfo": {
+        "name": "", 
+        "email": "", 
+        "phone": "", 
+        "location": "", 
+        "linkedin": "", 
+        "website": "", 
+        "summary": "Full professional summary string."
+      },
+      "experience": [
+        {
+          "id": "exp1",
+          "company": "",
+          "role": "",
+          "startDate": "",
+          "endDate": "",
+          "projectName": "",
+          "client": "",
+          "testingPlatform": "",
+          "description": "A single string containing the job details. Use line breaks (\\n) for separate bullet points if present."
+        }
+      ],
+      "education": [
+        {
+           "id": "edu1",
+           "institution": "",
+           "degree": "",
+           "year": ""
+        }
+      ],
+      "skills": "Comma separated string of all explicit technical/soft skills found (e.g. 'React, Java, Team Leadership, Photoshop')",
+      "projects": [
+        {
+          "id": "proj1",
+          "name": "",
+          "description": "",
+          "link": ""
+        }
+      ]
+    }
+    
+    === RESUME TEXT ===
+    ${resumeText}
+  `;
+
+  const textResponse = await getTextResponseFromProvider(promptText, aiConfig, 0.1);
+
+  if (!textResponse) {
+    throw new Error('No text returned from AI API.');
+  }
+
+  try {
+    const parsedObj = parseJsonResponse(textResponse);
+
+    // Basic validation to ensure we didn't get an empty JSON shell
+    const hasData = (
+      (parsedObj.personalInfo && (parsedObj.personalInfo.name || parsedObj.personalInfo.email || parsedObj.personalInfo.summary)) ||
+      (parsedObj.experience && parsedObj.experience.length > 0) ||
+      (parsedObj.education && parsedObj.education.length > 0) ||
+      (parsedObj.skills && parsedObj.skills.length > 5)
+    );
+
+    if (!hasData) {
+      throw new Error('AI could not find any recognizable resume information in this text.');
+    }
+
+    return parsedObj;
+  } catch (err) {
+    console.error("Raw response:", textResponse);
+    throw new Error('Failed to parse AI response into valid JSON: ' + err.message);
+  }
+
 };
 
 export const optimizeResumeWithAI = async (currentResumeData, jobDescription, aiConfig) => {

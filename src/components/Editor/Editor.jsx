@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
 import { Briefcase, GraduationCap, User, Wrench, FolderGit2, ChevronDown, ChevronRight, Upload, Loader2, Plus, Trash2, Sparkles } from 'lucide-react'
-import { cleanResumeFormattingWithAI, parseResumeFromImage } from '../../utils/aiParser'
+import { cleanResumeFormattingWithAI, parseResumeFromImage, parseResumeFromText } from '../../utils/aiParser'
 import { createEducationItem, createExperienceItem, createProjectItem, normalizeResumeData } from '../../utils/resumeData'
+import { convertPdfToImage, extractTextFromDocx, extractTextFromPdf, extractTextFromTxt } from '../../utils/docExtractor'
 import './Editor.css'
 
 const Section = ({ title, icon: Icon, children, defaultOpen = false }) => {
@@ -78,23 +79,64 @@ function Editor({ resumeData, setResumeData, aiConfig, setIsSettingsOpen }) {
     setCleanupStatusMessage('')
     
     try {
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        try {
-          const parsedData = await parseResumeFromImage(reader.result, file.type, aiConfig)
-          setResumeData(normalizeResumeData(parsedData))
-          setCleanupStatusMessage('Imported resume data. If any lines still look merged, use AI Cleanup below.')
-        } catch (err) {
-          alert("Error parsing resume: " + err.message)
-        } finally {
-          setIsParsing(false)
-          if (fileInputRef.current) fileInputRef.current.value = ''
+      let parsedData;
+      const fileType = file.type;
+      const fileName = file.name.toLowerCase();
+
+      if (fileType.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          try {
+            parsedData = await parseResumeFromImage(reader.result, file.type, aiConfig)
+            setResumeData(normalizeResumeData(parsedData))
+            setCleanupStatusMessage('Imported resume from image. Use AI Cleanup if text looks merged.')
+          } catch (err) {
+            alert("Error parsing image: " + err.message)
+          } finally {
+            setIsParsing(false)
+          }
         }
+        reader.readAsDataURL(file)
+        return; // Early return as FileReader is async
+      } else if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+        let text = await extractTextFromPdf(file);
+        console.log('Extracted PDF Text:', text);
+        
+        if (!text || text.length < 10) {
+          setCleanupStatusMessage('No text found. Using AI Vision to read scanned PDF...');
+          const imageData = await convertPdfToImage(file);
+          parsedData = await parseResumeFromImage(imageData, 'image/jpeg', aiConfig);
+          setCleanupStatusMessage('Imported scanned resume via AI Vision.');
+        } else {
+          parsedData = await parseResumeFromText(text, aiConfig);
+        }
+      } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.endsWith('.docx')) {
+        const text = await extractTextFromDocx(file);
+        console.log('Extracted DOCX Text:', text);
+        if (!text || text.length < 10) {
+          throw new Error('No readable text found in this Word document.');
+        }
+        parsedData = await parseResumeFromText(text, aiConfig);
+      } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
+        const text = await extractTextFromTxt(file);
+        console.log('Extracted TXT:', text);
+        if (!text || text.length < 5) {
+          throw new Error('The text file appears to be empty.');
+        }
+        parsedData = await parseResumeFromText(text, aiConfig);
+      } else {
+        throw new Error('Unsupported file format. Please upload a PDF, DOCX, TXT, or Image.');
       }
-      reader.readAsDataURL(file)
-    } catch (e) {
+
+      if (parsedData) {
+        setResumeData(normalizeResumeData(parsedData));
+        setCleanupStatusMessage('Imported resume data from ' + fileName.split('.').pop().toUpperCase() + '.');
+      }
+    } catch (err) {
+      alert("Error parsing file: " + err.message)
+    } finally {
       setIsParsing(false)
-      alert("Error reading file")
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -146,7 +188,7 @@ function Editor({ resumeData, setResumeData, aiConfig, setIsSettingsOpen }) {
       <div className="import-section glass-panel" style={{ padding: '16px', marginBottom: '8px' }}>
         <input 
           type="file" 
-          accept="image/png, image/jpeg, image/webp" 
+          accept="image/png, image/jpeg, image/webp, application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, text/plain" 
           ref={fileInputRef} 
           style={{display: 'none'}} 
           onChange={handleFileUpload} 
@@ -157,7 +199,7 @@ function Editor({ resumeData, setResumeData, aiConfig, setIsSettingsOpen }) {
           onClick={() => fileInputRef.current?.click()}
           disabled={isParsing}
         >
-          {isParsing ? <><Loader2 className="spin" size={18}/> Analyzing Resume...</> : <><Upload size={18} /> Auto-Fill from Image (AI)</>}
+          {isParsing ? <><Loader2 className="spin" size={18}/> Analyzing File...</> : <><Upload size={18} /> Auto-Fill from File (AI)</>}
         </button>
         <button
           type="button"
@@ -168,7 +210,7 @@ function Editor({ resumeData, setResumeData, aiConfig, setIsSettingsOpen }) {
           {isCleaningImportedResume ? <><Loader2 className="spin" size={16} /> Cleaning Layout...</> : <><Sparkles size={16} /> Clean Up Parsed Resume with AI</>}
         </button>
         <p className="editor-helper-text">
-          Use this after image import if headers, bullets, or section lines were merged together.
+          Supports PDF, Word (.docx), TXT, and Images (JPG/PNG/WebP).
         </p>
         {cleanupStatusMessage && (
           <div className="editor-cleanup-status">
