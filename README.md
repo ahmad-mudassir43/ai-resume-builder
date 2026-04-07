@@ -1,237 +1,89 @@
-# ResumePro Builder
+# AI Resume builder 🚀
 
-AI-powered resume builder with image parsing, guided editing, ATS review, theme switching, and direct PDF export.
+**AI Resume builder** is a premium, AI-powered resume builder designed to help you create ATS-optimized resumes with ease. Featuring advanced AI parsing, a conversational guided builder, and professional multi-page PDF exporting, it’s the ultimate tool for modern job seekers.
 
-## Current Feature Set
+## ✨ Key Features
 
-- AI image import for resume screenshots or scans
-- AI cleanup pass for parsed resumes with safer non-destructive merging
-- Resume chat assistant for targeted edits
-- ATS keyword score plus AI ATS review
-- `Apply with AI` for ATS recommendations
-- Revert and alternative AI optimization flow
-- Multiple resume themes
-- Ollama Cloud / Local Bridge support
-- Gemini support
-- Direct client-side PDF export using the current preview
+-   **Multi-format AI Parsing**: Instantly extract data from PDF, DOCX, TXT, and Images (scans/screenshots) with high accuracy.
+-   **Guided AI Resume Builder**: Create your resume through a conversational interface that asks the right questions.
+-   **ATS Score & AI Review**: Get a real-time keyword match score and detailed AI feedback on how to improve your resume.
+-   **Apply with AI**: Automatically optimize your resume for specific job descriptions with one click.
+-   **Premium PDF Export**: Generate professional, multi-page PDFs with consistent margins and no browser artifacts.
+-   **Theme Studio**: Choose from curated themes like *Classic*, *Executive*, *Modern*, and *Minimal*.
+-   **Local & Cloud AI**: Support for Google Gemini (Cloud) and Ollama (Local/Cloud) for privacy and flexibility.
+-   **Android Support**: Built-in Capacitor support for running as a native Android application.
 
-## Local Development
+## 🚀 Getting Started
 
-Install dependencies:
+### Prerequisites
 
-```powershell
-npm install
-```
+-   [Node.js](https://nodejs.org/) (v18+)
+-   [npm](https://www.npmjs.com/)
 
-Start the app:
+### Installation
 
-```powershell
-npm run dev
-```
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/your-repo/ai-resume-builder.git
+    cd ai-resume-builder
+    ```
 
-Build for production:
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
 
-```powershell
-npm run build
-```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
 
-## AI Provider Setup
+### Mobile Development (Android)
 
-Open `Settings` in the app header.
+AI Resume builder uses Capacitor for Android support:
 
-Supported providers:
+-   **Sync**: `npm run android:sync`
+-   **Open in Studio**: `npm run android:open`
+-   **Run on Device**: `npm run android:run`
+-   **Build APK**: `npm run android:apk`
 
-- `Google Gemini`
-- `Ollama Cloud`
+## 🤖 AI Configuration
 
-### Ollama Modes
+Open **Settings** in the app header to configure your AI providers.
 
-- `Local Bridge (Recommended)`
-- `Direct Cloud API`
+### Supported Providers
 
-For local bridge:
+-   **Google Gemini**: Recommended for the best parsing and optimization results.
+-   **Ollama**: Support for local LLMs via the Ollama Bridge or direct Cloud API access.
 
-1. Run your local Ollama instance.
-2. Use base URL `http://localhost:11434`.
-3. If you want cloud-backed Ollama models through the local app, sign in with:
+#### Ollama Setup
+1.  Run your local Ollama instance.
+2.  Set the Base URL to `http://localhost:11434`.
+3.  Choose your text and vision models in the Settings.
 
-```powershell
-ollama signin
-```
+## 🛠️ Product Workflow
 
-### Ollama Models
+1.  **Import**: Upload an existing resume (PDF, DOCX, Image) or start fresh.
+2.  **Clean & Structure**: Use AI cleanup to fix OCR issues and normalize data.
+3.  **Guided Build**: Chat with the Resume Assistant to add details or polish sections.
+4.  **Optimize**: Paste a Job Description and let the AI tailor your resume for a >80% ATS score.
+5.  **Review**: Check the ATS Match score and implement "Apply with AI" suggestions.
+6.  **Export**: Download your professional resume as a multi-page PDF.
 
-Settings supports:
+## 📁 Technical Architecture
 
-- preset text model selection
-- preset vision model selection
-- custom text model override
-- custom vision model override
-- reset to recommended models
-- test Ollama connection
+-   **Frontend**: React + Vite + Vanilla CSS
+-   **Mobile**: Capacitor (Android)
+-   **AI Integration**: Gemini 2.5 Flash, Ollama
+-   **Libraries**: `html2pdf.js` (Export), `pdfjs-dist` (PDF Parsing), `mammoth` (DOCX Parsing)
 
-## Product Workflow
+### Main Components
+-   [src/App.jsx](./src/App.jsx) - Main Entry
+-   [src/components/ResumeChat/ResumeChat.jsx](./src/components/ResumeChat/ResumeChat.jsx) - Guided AI Builder
+-   [src/components/Editor/Editor.jsx](./src/components/Editor/Editor.jsx) - Resume Content Management
+-   [src/components/Preview/Preview.jsx](./src/components/Preview/Preview.jsx) - Live Rendering Engine
+-   [src/utils/aiParser.js](./src/utils/aiParser.js) - AI Logic & Prompts
 
-### 1. Import Resume
+---
 
-Use `Auto-Fill from Image (AI)` to parse a resume image into editable fields.
-
-Supported import behavior:
-
-- personal info extraction
-- experience parsing
-- education parsing
-- projects parsing
-- skills extraction
-- experience-level metadata extraction such as:
-  - `Project`
-  - `Client`
-  - `Testing Platform`
-
-### 2. Clean Parsed Resume
-
-If OCR merges lines or sections badly, use `Clean Up Parsed Resume with AI`.
-
-Current cleanup behavior:
-
-- restructures merged lines
-- improves bullet formatting
-- moves labeled experience details into structured fields
-- preserves original data through a safe merge
-- keeps existing skills if the AI returns them in the wrong shape
-
-Important:
-
-- cleanup is intended to reorganize existing data, not invent new data
-- it should no longer wipe skills or drop entries when the AI response is incomplete
-
-### 3. Edit Resume
-
-Use the editor to update:
-
-- personal info
-- experience
-- education
-- skills
-- projects
-
-Experience entries now support:
-
-- role
-- company
-- start date
-- end date
-- project name
-- client
-- testing platform
-- bullet-style description
-
-### 4. Use Resume Chat
-
-The `Resume Assistant` chat can update the resume directly.
-
-Current chat behavior includes:
-
-- updating specific sections from plain language
-- appending new work details to the most relevant experience
-- extending the latest role to `Present` when the user indicates they are still working there
-- preserving untouched sections
-
-### 5. Run ATS Review
-
-ATS tooling includes two layers:
-
-- instant keyword compatibility score
-- `AI ATS Review`
-
-AI ATS review returns:
-
-- summary
-- score estimate
-- strengths
-- gaps
-- recommended fixes
-
-Each ATS recommendation supports `Apply with AI`, which:
-
-- updates the resume
-- refreshes the AI ATS review
-- refreshes the visible AI ATS score
-
-### 6. Optimize Resume
-
-Paste a job description and use:
-
-- `Auto-Optimize for this Job`
-- `Alternative`
-- `Revert`
-
-This flow keeps an AI snapshot so generated edits can be rolled back.
-
-### 7. Choose a Theme
-
-Available themes:
-
-- `Classic`
-- `Executive`
-- `Modern`
-- `Minimal`
-
-Theme selection persists in local storage.
-
-### 8. Export PDF
-
-`Export PDF` now uses direct client-side PDF generation instead of browser-only `window.print()`.
-
-Current export behavior:
-
-- exports the live resume preview
-- avoids browser timestamp/header/footer artifacts
-- preserves the current theme
-- loads the PDF library only when export is requested
-
-## Parsing and Preview Behavior
-
-### Experience Metadata Highlighting
-
-When experience includes project metadata, the preview highlights it above the role details:
-
-- `Project`
-- `Client`
-- `Platform`
-
-This is useful for QA, automation, consulting, and client-facing resume formats.
-
-### Nested Projects
-
-Projects can be:
-
-- standalone, or
-- attached to a specific experience entry
-
-Attached projects appear inside the related experience block in the preview.
-
-### Bullet Handling
-
-The preview currently:
-
-- removes obvious duplicate bullet lines
-- preserves nested bullet indentation
-- indents sub-bullets more clearly
-
-## Notes
-
-- The app stores settings and preferences in browser local storage.
-- Ollama local/cloud behavior depends on your local server availability and model access.
-- PDF export currently adds a large lazy-loaded chunk because of the export library, but that chunk is not loaded during normal app use.
-
-## Main Files
-
-- [src/App.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/App.jsx)
-- [src/components/Editor/Editor.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/components/Editor/Editor.jsx)
-- [src/components/Preview/Preview.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/components/Preview/Preview.jsx)
-- [src/components/AtsChecker/AtsChecker.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/components/AtsChecker/AtsChecker.jsx)
-- [src/components/ResumeChat/ResumeChat.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/components/ResumeChat/ResumeChat.jsx)
-- [src/components/ThemeStudio/ThemeStudio.jsx](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/components/ThemeStudio/ThemeStudio.jsx)
-- [src/utils/aiParser.js](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/utils/aiParser.js)
-- [src/utils/resumeData.js](C:/Users/qdnmu/OneDrive/Documents/Antigravity/src/utils/resumeData.js)
+*Built with ❤️ for job seekers everywhere.*

@@ -239,7 +239,7 @@ function App() {
       <header className="app-header glass-panel no-print">
         <div className="logo">
           <div className="logo-icon">ATS</div>
-          <h1>ResumePro <span>Builder</span></h1>
+          <h1>AI Resume <span>builder</span></h1>
         </div>
         
         <div className="header-actions">
